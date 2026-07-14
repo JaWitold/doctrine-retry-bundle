@@ -9,6 +9,7 @@ use DualMedia\DoctrineRetryBundle\Event\TransactionFailedEvent;
 use DualMedia\DoctrineRetryBundle\Event\TransactionFinalizedEvent;
 use DualMedia\DoctrineRetryBundle\Event\TransactionRetryEvent;
 use DualMedia\DoctrineRetryBundle\Event\TransactionStartEvent;
+use DualMedia\DoctrineRetryBundle\Interface\PassThroughExceptionInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -86,6 +87,12 @@ class Retrier
                 $rollback = false;
 
                 usleep($retries * $sleepMilliseconds * 1000);
+            } catch (PassThroughExceptionInterface $e) {
+                self::$nesting--;
+
+                $rollback = false;
+
+                throw $e;
             } catch (\Exception $e) {
                 $this->logger?->error('[Retrier] An exception has occurred', ['exception' => $e]);
                 self::$nesting--;
