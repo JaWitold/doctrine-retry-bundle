@@ -9,7 +9,7 @@ use DualMedia\DoctrineRetryBundle\Event\TransactionFailedEvent;
 use DualMedia\DoctrineRetryBundle\Event\TransactionFinalizedEvent;
 use DualMedia\DoctrineRetryBundle\Event\TransactionRetryEvent;
 use DualMedia\DoctrineRetryBundle\Event\TransactionStartEvent;
-use DualMedia\DoctrineRetryBundle\Interface\PassThroughExceptionInterface;
+use DualMedia\DoctrineRetryBundle\Interface\PassthroughExceptionInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -87,10 +87,12 @@ class Retrier
                 $rollback = false;
 
                 usleep($retries * $sleepMilliseconds * 1000);
-            } catch (PassThroughExceptionInterface $e) {
+            } catch (PassthroughExceptionInterface $e) {
                 self::$nesting--;
 
                 $rollback = false;
+
+                $this->eventDispatcher->dispatch(new TransactionFailedEvent($e, $retries, $em));
 
                 throw $e;
             } catch (\Exception $e) {

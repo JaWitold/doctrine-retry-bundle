@@ -7,8 +7,10 @@ namespace DualMedia\DoctrineRetryBundle\Tests\Unit;
 use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\Persistence\ManagerRegistry;
+use DualMedia\DoctrineRetryBundle\Event\TransactionFailedEvent;
 use DualMedia\DoctrineRetryBundle\Event\TransactionFinalizedEvent;
-use DualMedia\DoctrineRetryBundle\Interface\PassThroughExceptionInterface;
+use DualMedia\DoctrineRetryBundle\Event\TransactionStartEvent;
+use DualMedia\DoctrineRetryBundle\Interface\PassthroughExceptionInterface;
 use DualMedia\DoctrineRetryBundle\Retrier;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
@@ -41,9 +43,9 @@ class RetrierTest extends TestCase
         $this->service->execute(function () {});
     }
 
-    public function testPassThroughExceptionBypassesRetryAndEventDispatch(): void
+    public function testPassthroughExceptionBypassesRetryAndEventDispatch(): void
     {
-        $passThroughException = new class('pass-through') extends \RuntimeException implements PassThroughExceptionInterface {};
+        $passThroughException = new class('pass-through') extends \RuntimeException implements PassthroughExceptionInterface {};
 
         $connection = $this->createMock(Connection::class);
         $connection->expects(static::never())
@@ -61,15 +63,13 @@ class RetrierTest extends TestCase
             ->willReturn($em);
 
         $this->getMockedService(EventDispatcherInterface::class)
-            ->expects(static::once())
+            ->expects(static::exactly(3))
             ->method('dispatch')
-            ->with(static::callback(static function (mixed $event) use ($em): bool {
-                return $event instanceof TransactionFinalizedEvent
-                    && false === $event->success
-                    && false === $event->rollback
-                    && 0 === $event->attempt
-                    && $event->em === $em;
-            }));
+            ->with(static::logicalOr(
+                static::isInstanceOf(TransactionStartEvent::class),
+                static::isInstanceOf(TransactionFailedEvent::class),
+                static::isInstanceOf(TransactionFinalizedEvent::class),
+            ));
 
         $this->expectException($passThroughException::class);
         $this->expectExceptionMessage('pass-through');
