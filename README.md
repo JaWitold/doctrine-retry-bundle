@@ -49,19 +49,19 @@ class Foo {
 }
 ```
 
-## Pass-Through Exceptions
+## Passthrough Exceptions
 
-By default, any `\Exception` thrown inside the callback will be caught, logged, and re-thrown after rolling back the transaction. If you want an exception to **bypass retry logic entirely** (e.g. a deliberate early exit or a business-logic exception that should propagate immediately without logging), implement `PassThroughExceptionInterface`:
+By default, any `\Exception` thrown inside the callback will be caught, logged, and re-thrown after rolling back the transaction. If you want an exception to **bypass retry logic entirely** (e.g. a deliberate early exit or a business-logic exception that should propagate immediately without logging), implement `PassthroughExceptionInterface`:
 
 ```php
-use DualMedia\DoctrineRetryBundle\Interface\PassThroughExceptionInterface;
+use DualMedia\DoctrineRetryBundle\Interface\PassthroughExceptionInterface;
 
-class OrderNotFoundException extends \RuntimeException implements PassThroughExceptionInterface {}
+class OrderNotFoundException extends \RuntimeException implements PassthroughExceptionInterface {}
 ```
 
-When `Retrier` encounters an exception implementing `PassThroughExceptionInterface`, it will:
+When `Retrier` encounters an exception implementing `PassthroughExceptionInterface`, it will:
 - **Skip** the retry loop
-- **Skip** logging and event dispatching
+- **Skip** logging
 - Re-throw the exception immediately
 
 This is useful for intentional control-flow exceptions that should not be treated as database failures.
