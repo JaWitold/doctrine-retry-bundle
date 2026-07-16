@@ -92,6 +92,10 @@ class Retrier
 
                 $rollback = false;
 
+                $this->rollbackIfActive($em);
+
+                $em->clear();
+
                 $this->eventDispatcher->dispatch(new TransactionFailedEvent($e, $retries, $em));
 
                 throw $e;
@@ -108,11 +112,7 @@ class Retrier
                 if ($rollback) {
                     $em->close();
 
-                    $connection = $em->getConnection();
-
-                    if ($connection->isTransactionActive()) {
-                        $connection->rollback();
-                    }
+                    $this->rollbackIfActive($em);
                 }
             }
         } while ($retries < 10);
@@ -120,5 +120,18 @@ class Retrier
         self::$nesting--;
 
         throw $e;
+    }
+
+    /**
+     * @throws \Doctrine\DBAL\Exception
+     */
+    private function rollbackIfActive(
+        EntityManagerInterface $em
+    ): void {
+        $connection = $em->getConnection();
+
+        if ($connection->isTransactionActive()) {
+            $connection->rollback();
+        }
     }
 }
