@@ -92,6 +92,9 @@ class Retrier
 
                 $rollback = false;
 
+                $em->rollback();
+                $em->clear();
+
                 $this->eventDispatcher->dispatch(new TransactionFailedEvent($e, $retries, $em));
 
                 throw $e;

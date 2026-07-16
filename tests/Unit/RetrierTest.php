@@ -56,6 +56,10 @@ class RetrierTest extends TestCase
             ->method('close');
         $em->expects(static::never())
             ->method('getConnection');
+        $em->expects(static::once())
+            ->method('rollback');
+        $em->expects(static::once())
+        ->method('clear');
 
         $this->getMockedService(ManagerRegistry::class)
             ->expects(static::once())
