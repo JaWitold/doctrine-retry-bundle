@@ -48,18 +48,22 @@ class RetrierTest extends TestCase
         $passThroughException = new class('pass-through') extends \RuntimeException implements PassthroughExceptionInterface {};
 
         $connection = $this->createMock(Connection::class);
-        $connection->expects(static::never())
-            ->method('isTransactionActive');
+        $connection->expects(static::once())
+            ->method('isTransactionActive')
+            ->willReturn(true);
+        $connection->expects(static::once())
+            ->method('rollback');
 
         $em = $this->createMock(EntityManagerInterface::class);
         $em->expects(static::never())
             ->method('close');
         $em->expects(static::never())
-            ->method('getConnection');
-        $em->expects(static::once())
             ->method('rollback');
         $em->expects(static::once())
-        ->method('clear');
+            ->method('getConnection')
+            ->willReturn($connection);
+        $em->expects(static::once())
+            ->method('clear');
 
         $this->getMockedService(ManagerRegistry::class)
             ->expects(static::once())
